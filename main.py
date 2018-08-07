@@ -2,7 +2,7 @@ import cv2
 
 def main(video_file_name, audio_file_name, subtitles_file_name):
     video = cv2.VideoCapture(video_file_name)
-    audio =
+    audio = 
     subtitles = subtitle_parser()
 
     speaker = speaker_detection()
