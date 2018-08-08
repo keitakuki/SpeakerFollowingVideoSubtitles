@@ -32,7 +32,7 @@ def generate_avg_img(video_file_name):
 
 
 def detect_faces_from_an_img(avg_img):
-    faces = cascade.detectMultiScale(avg_img)
+    faces = cascade.detectMultiScale(avg_img, minNeighbors=15)
     # for (x, y, w, h) in faces:
     #     cv2.rectangle(avg_img, (x, y), (x + w, y + h), (0, 0, 200), 3)
     # cv2.imwrite(f'../assets/test_avg.jpg', avg_img)
@@ -72,7 +72,7 @@ def estimate_mouse(face):
 
 
 def filter_by_msd(faces, msds, threshold):
-    faces_, msds_ = []
+    faces_, msds_ = [], []
     for face, msd in zip(faces, msds):
         if msd > threshold:
             faces_.append(face)
