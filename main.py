@@ -1,4 +1,4 @@
-import cv2
+import os
 import sys
 import soundfile
 from dateutil.parser import parse
@@ -20,13 +20,15 @@ def main(sample):
     subtitles_file_name = f"assets/{sample}/subtitles.srt"
     pre_subtitle_position_file_name = f"assets/{sample}/pre_subtitle_position.csv"
     output_file_name = f"assets/{sample}/result.mp4"
+    output_wa_file_name = f"assets/{sample}/result_with_audio.mp4"
 
     audio, sampling_rate = soundfile.read(audio_file_name)
     subtitle_start_time, subtitle_end_time, subtitle = subtitle_parser(subtitles_file_name)
     pre_subtitle_position = read_position(pre_subtitle_position_file_name)
 
     speaker, faces = speaker_detection(video_file_name, audio, subtitle, subtitle_start_time, subtitle_end_time)
-    subtitle_placement(speaker, faces, pre_subtitle_position, video_file_name, subtitle, output_file_name)
+    subtitle_placement(speaker, faces, pre_subtitle_position, video_file_name, subtitle, audio_file_name, output_file_name)
+    add_audio_onto_video(output_file_name, audio_file_name, output_wa_file_name)
 
 
 # 字幕ファイルから時間と字幕を抜き出す関数
@@ -85,11 +87,14 @@ def speaker_detection(video_file_name, audio, subtitle, subtitle_start_time, sub
         return [], all_faces
 
 # 論文のアルゴリスム2部分
-def subtitle_placement(speaker, faces, pre_subtitle_position, video_file_name, subtitle, output_file_name):
+def subtitle_placement(speaker, faces, pre_subtitle_position, video_file_name, subtitle, audio_file_name, output_file_name):
     candidate_positions = spo.calc_candidate_positions(speaker)
     energies = spo.calc_energy(candidate_positions, speaker, faces, pre_subtitle_position, video_file_name)
     opt_position = spo.min_energy(candidate_positions, energies)
-    spo.save_video(video_file_name, subtitle, opt_position, output_file_name)
+    spo.save_video(video_file_name, subtitle, opt_position, audio_file_name, output_file_name)
+
+def add_audio_onto_video(output_file_name, audio_file_name, output_wa_file_name):
+    os.system(f"ffmpeg -i {output_file_name} -i {audio_file_name} {output_wa_file_name} -y")
 
 if __name__ == "__main__":
     args = sys.argv

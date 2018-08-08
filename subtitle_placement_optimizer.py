@@ -1,6 +1,5 @@
 import cv2
 
-
 def calc_candidate_positions(speaker):
     x, y, w, h = speaker
     candidate_positions = [
@@ -69,7 +68,7 @@ def get_display_size(video_file_name):
     return width, height
 
 
-def save_video(video_file_name, subtitle, position, output_file_name):
+def save_video(video_file_name, subtitle, position, audio_file_name, output_file_name):
     cap = cv2.VideoCapture(video_file_name)
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -85,7 +84,6 @@ def save_video(video_file_name, subtitle, position, output_file_name):
             vw.write(overlay_subtitle(img, subtitle, position))
         else:
             break
-
     cap.release()
 
 
