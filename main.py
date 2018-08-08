@@ -19,8 +19,8 @@ def main(sample):
     audio_file_name = f"assets/{sample}/audio.wav"
     subtitles_file_name = f"assets/{sample}/subtitles.srt"
     pre_subtitle_position_file_name = f"assets/{sample}/pre_subtitle_position.csv"
-    output_file_name = f"assets/{sample}/result.mp4"
-    output_wa_file_name = f"assets/{sample}/result_with_audio.mp4"
+    output_file_name = f"assets/{sample}/result/result.mp4"
+    output_wa_file_name = f"assets/{sample}/result/result_with_audio.mp4"
 
     audio, sampling_rate = soundfile.read(audio_file_name)
     subtitle_start_time, subtitle_end_time, subtitle = subtitle_parser(subtitles_file_name)
