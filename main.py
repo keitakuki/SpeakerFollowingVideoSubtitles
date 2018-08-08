@@ -2,6 +2,7 @@ import cv2
 import sys
 import soundfile
 from dateutil.parser import parse
+import csv
 
 import speaker_detector as sd
 import subtitle_placement_optimizer as spo
@@ -13,13 +14,17 @@ theta3 = 2
 theta4 = 0.1
 theta5 = 2
 
-pre_subtitle_position = [150, 300]
+def main(sample):
+    video_file_name = f"assets/{sample}/video.mp4"
+    audio_file_name = f"assets/{sample}/audio.wav"
+    subtitles_file_name = f"assets/{sample}/subtitles.srt"
+    pre_subtitle_position_file_name = f"assets/{sample}/pre_subtitle_position.csv"
+    output_file_name = f"assets/{sample}/result.mp4"
 
-
-def main(video_file_name, audio_file_name, subtitles_file_name):
-    output_file_name = "assets/result.mp4"
     audio, sampling_rate = soundfile.read(audio_file_name)
     subtitle_start_time, subtitle_end_time, subtitle = subtitle_parser(subtitles_file_name)
+    pre_subtitle_position = read_position(pre_subtitle_position_file_name)
+
     speaker, faces = speaker_detection(video_file_name, audio, subtitle, subtitle_start_time, subtitle_end_time)
     subtitle_placement(speaker, faces, pre_subtitle_position, video_file_name, subtitle, output_file_name)
 
@@ -45,6 +50,13 @@ def subtitle_parser(subtitles_file_name):
             preline_status = 3
     return start_time, end_time, subtitle
 
+def read_position(path):
+    data = []
+    with open(path, "r") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            return [int(row[0]), int(row[1])]
+
 # 論文のアルゴリスム1部分
 def speaker_detection(video_file_name, audio, subtitle, subtitle_start_time, subtitle_end_time):
     faces = sd.detect_faces(video_file_name)
@@ -53,13 +65,26 @@ def speaker_detection(video_file_name, audio, subtitle, subtitle_start_time, sub
     faces, msds = sd.filter_by_msd(faces, msds, theta1)
     if len(faces) >= 2:
         faces, msds = sd.filter_by_msd(faces, msds, max(msds)/theta2)
-
+        if len(faces) >= 2:
+            ccs = sd.calc_ccs(video_file_name, faces)
+            faces = sd.filter_by_cc(faces, ccs, max(ccs)/theta3)
+            if len(faces) >= 2:
+                lcs = sd.calc_lcs(video_file_name, faces, subtitle, subtitle_start_time, subtitle_end_time)
+                if max(lcs) - max(filter(lambda x: x != max(lcs), lcs)) > theta4:
+                    return faces[lcs.index(max(lcs))]
+                else:
+                    avs = sd.calc_avs(video_file_name, audio, faces)
+                    if max(avs) > theta5:
+                        return faces[avs.index(max(avs))]
+                    else:
+                        return []
 
     if len(faces) == 1:
         return faces[0], all_faces
     else:
         return [], all_faces
 
+# 論文のアルゴリスム2部分
 def subtitle_placement(speaker, faces, pre_subtitle_position, video_file_name, subtitle, output_file_name):
     candidate_positions = spo.calc_candidate_positions(speaker)
     energies = spo.calc_energy(candidate_positions, speaker, faces, pre_subtitle_position, video_file_name)
@@ -68,4 +93,4 @@ def subtitle_placement(speaker, faces, pre_subtitle_position, video_file_name, s
 
 if __name__ == "__main__":
     args = sys.argv
-    main(args[1], args[2], args[3])
+    main(args[1])
